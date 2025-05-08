@@ -1,0 +1,13 @@
+
+
+spring:
+  application:
+    name: PRODUCT-SERVICE
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/product-service
+
+
+server:
+  port: 8081
