@@ -7,6 +7,7 @@ import com.connect.order_service.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,9 +20,24 @@ public class OrderService {
     private OrderRepository orderRepository;
 
 
-    public void placeOrder(OrderRequest orderRequest) {
-        var order = mapToOrder(orderRequest);
-        orderRepository.save(order);
+    @Autowired
+    private RestTemplate restTemplate;
+
+
+    public String placeOrder(OrderRequest orderRequest) {
+
+        boolean isInStock = false;
+        String url = "http://localhost:8083/api/inventory?skuCode="+orderRequest.skuCode()+"&quantity="+orderRequest.quantity();
+
+        if(Boolean.TRUE.equals(restTemplate.getForObject(url, boolean.class))){
+            Order order = mapToOrder(orderRequest);
+            orderRepository.save(order);
+            return "Order placed.";
+        }
+        else {
+            return "Product unavailable";
+
+        }
     }
 
     private static Order mapToOrder(OrderRequest orderRequest) {
