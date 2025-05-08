@@ -1,5 +1,6 @@
 package com.connect.order_service.service;
 
+import com.connect.order_service.config.ClientConfig;
 import com.connect.order_service.dto.OrderRequest;
 import com.connect.order_service.dto.OrderResponse;
 import com.connect.order_service.model.Order;
@@ -21,15 +22,19 @@ public class OrderService {
 
 
     @Autowired
-    private RestTemplate restTemplate;
+    private ClientConfig clientConfig;
+
+//    @Autowired
+//    private RestTemplate restTemplate;
 
 
     public String placeOrder(OrderRequest orderRequest) {
 
         boolean isInStock = false;
-        String url = "http://localhost:8083/api/inventory?skuCode="+orderRequest.skuCode()+"&quantity="+orderRequest.quantity();
+//        String url = "http://localhost:8083/api/inventory?skuCode="+orderRequest.skuCode()+"&quantity="+orderRequest.quantity();
+//        if(Boolean.TRUE.equals(restTemplate.getForObject(url, boolean.class))){
 
-        if(Boolean.TRUE.equals(restTemplate.getForObject(url, boolean.class))){
+        if(clientConfig.checkInventory(orderRequest.skuCode(), orderRequest.quantity())){
             Order order = mapToOrder(orderRequest);
             orderRepository.save(order);
             return "Order placed.";
