@@ -23,6 +23,13 @@ spring:
         format_sql: true
 
 
+  cloud:
+    discovery:
+      client:
+        service-url:
+          defaultZone: http://localhost:8761/eureka/  # URL of the Eureka server
+
+
 # Server port
 server:
   port: 8082

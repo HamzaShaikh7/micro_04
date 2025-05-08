@@ -1,0 +1,15 @@
+
+
+spring:
+  application:
+    name: REGISTRY-SERVICE
+
+eureka:
+  client:
+    register-with-eureka: false  # This service does not register with itself
+    fetch-registry: false         # This service does not fetch the registry
+  server:
+    enable-self-preservation: false  # Disable self-preservation for testing
+
+server:
+  port: 8761
