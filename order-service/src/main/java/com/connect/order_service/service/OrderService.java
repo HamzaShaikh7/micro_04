@@ -5,13 +5,16 @@ import com.connect.order_service.dto.OrderRequest;
 import com.connect.order_service.dto.OrderResponse;
 import com.connect.order_service.model.Order;
 import com.connect.order_service.repository.OrderRepository;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Transactional
@@ -24,25 +27,25 @@ public class OrderService {
     @Autowired
     private ClientConfig clientConfig;
 
-//    @Autowired
-//    private RestTemplate restTemplate;
 
+    @CircuitBreaker(name = "inventory", fallbackMethod = "fallbackPlaceOrder")
+    @TimeLimiter(name = "inventory", fallbackMethod = "fallbackPlaceOrder")
+    @Retry(name = "inventory", fallbackMethod = "fallbackPlaceOrder")
+    public CompletableFuture<String> placeOrder(OrderRequest orderRequest) {
+        return CompletableFuture.supplyAsync(() -> {
+            boolean isInStock = clientConfig.checkInventory(orderRequest.skuCode(), orderRequest.quantity());
+            if (isInStock) {
+                Order order = mapToOrder(orderRequest);
+                orderRepository.save(order);
+                return "Order placed.";
+            } else {
+                return "Product unavailable";
+            }
+        });
+    }
 
-    public String placeOrder(OrderRequest orderRequest) {
-
-        boolean isInStock = false;
-//        String url = "http://localhost:8083/api/inventory?skuCode="+orderRequest.skuCode()+"&quantity="+orderRequest.quantity();
-//        if(Boolean.TRUE.equals(restTemplate.getForObject(url, boolean.class))){
-
-        if(clientConfig.checkInventory(orderRequest.skuCode(), orderRequest.quantity())){
-            Order order = mapToOrder(orderRequest);
-            orderRepository.save(order);
-            return "Order placed.";
-        }
-        else {
-            return "Product unavailable";
-
-        }
+    private CompletableFuture<String> fallbackPlaceOrder(OrderRequest orderRequest, RuntimeException runtimeException) {
+        return CompletableFuture.supplyAsync(() -> "Oops! Something went wrong, please try again later!");
     }
 
     private static Order mapToOrder(OrderRequest orderRequest) {
